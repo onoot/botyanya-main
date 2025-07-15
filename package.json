@@ -1,0 +1,26 @@
+{
+  "name": "telegram-ingredient-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+  "dev": "nodemon bot.mjs",
+  "start": "node bot.mjs"
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.1",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.14.1",
+    "node-schedule": "^2.1.1",
+    "node-telegram-bot-api": "^0.66.0",
+    "nodemon": "^3.1.10",
+    "sequelize": "^6.37.7"
+  }
+}
