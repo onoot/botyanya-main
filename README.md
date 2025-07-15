@@ -16,7 +16,6 @@ cd botyanya-main
 3. Установи зависимости
 npm install
 
-
 4. Создай .env файл или переименуйте .env.example
 TELEGRAM_BOT_TOKEN=ВАШ_ТОКЕН
 DB_HOST=localhost
