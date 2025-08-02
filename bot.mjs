@@ -56,42 +56,6 @@ bot.on('message', async (msg) => {
   }
 });
 
-
-// bot.mjs → message handler
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text;
-
-  const user = await db.User.findOne({ where: { telegramId: chatId.toString() } });
-  if (!user || !user.isRegistered) return;
-
-  const state = await db.UserState.findOne({ where: { telegramId: chatId.toString() } });
-  if (!state) return;
-
-  // Если админ вводит сообщение для рассылки
-  if (user.role === 'admin' && state.step === 'broadcast') {
-    await state.update({ step: null });
-
-    const users = await db.User.findAll({ where: { isRegistered: true }, raw: true });
-
-    for (const user of users) {
-      try {
-        await bot.sendMessage(user.telegramId, `📢 Админ отправил:\n\n${text}`);
-      } catch (err) {
-        console.error(`Не удалось отправить пользователю ${user.telegramId}:`, err.message);
-      }
-    }
-
-    await bot.sendMessage(chatId, "✅ Рассылка выполнена.");
-    return;
-  }
-
-  // Если пользователь вводит количество
-  if (state.editingIngredientId && state.currentMenuId && !text.startsWith('/')) {
-    await userController.handleIngredientQuantityInput(bot, msg);
-  }
-});
-
 // bot.mjs
 const processedMessages = new Set();
 let Enable = false;
@@ -138,144 +102,186 @@ bot.on('message', async (msg) => {
   Enable=false;
 });
 
+// bot.mjs → message handler
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  const user = await db.User.findOne({ where: { telegramId: chatId.toString() } });
+  if (!user || !user.isRegistered) return;
+
+  const state = await db.UserState.findOne({ where: { telegramId: chatId.toString() } });
+  if (!state) return;
+
+  // Если пользователь вводит комментарий
+  if (state.step === 'entering_comment') {
+    await state.update({
+      comment: text,
+      step: null
+    });
+    const keyboard = [
+      [
+        { text: '👩‍🍳Отправить заявку', callback_data: 'submit_order' },
+        { text: '⬅️ Выбрать ещё', callback_data: `main_menu'}` }
+      ]
+    ]
+
+    await bot.sendMessage(chatId, "✅ Комментарий сохранен!", {
+       reply_markup: {
+        inline_keyboard: keyboard
+      }
+    });
+    return;
+  }
+
+  // Если админ вводит сообщение для рассылки
+  if (user.role === 'admin' && state.step === 'broadcast') {
+    await state.update({ step: null });
+
+    const users = await db.User.findAll({ where: { isRegistered: true }, raw: true });
+
+    for (const user of users) {
+      try {
+        await bot.sendMessage(user.telegramId, `📢 Админ отправил:\n\n${text}`);
+      } catch (err) {
+        console.error(`Не удалось отправить пользователю ${user.telegramId}:`, err.message);
+      }
+    }
+
+    await bot.sendMessage(chatId, "✅ Рассылка выполнена.");
+    return;
+  }
+
+  // Если пользователь вводит количество
+  if (state.editingIngredientId && state.currentMenuId && !text.startsWith('/')) {
+    await userController.handleIngredientQuantityInput(bot, msg);
+  }
+});
+
+// bot.mjs → callback_query
 bot.on('callback_query', async (query) => {
   const chatId = query.message.chat.id;
-  const message_id = query.message.message_id;
   const data = query.data;
 
   try {
     const requester = await db.User.findOne({ where: { telegramId: chatId.toString() } });
-
-    if (!requester || (!requester.isRegistered && data !== "register_client")) {
-      return bot.answerCallbackQuery(query.id, "⚠️ Вы не зарегистрированы.", true);
-    }
-
-    const isAdmin = requester.role === 'admin';
-
-    if (isAdmin && data.startsWith('admin_')) {
-      switch (data) {
-        case 'admin_add_ingredient':
-          await bot.sendMessage(chatId, "➕ Введите команду:\n/add_ingredient имя единица_измерения категория");
-          break;
-
-        case 'admin_delete_ingredient':
-          await adminController.showIngredients(bot, query);
-          break;
-
-        case 'admin_move_ingredient':
-          await bot.sendMessage(chatId, "📂 Введите команду:\n/move_ingredient имя новая_категория");
-          break;
-
-        case 'admin_list_templates':
-          deleteMessage(bot, chatId, message_id)
-          await adminController.listTemplates(bot, query); 
-          break;
-
-        case 'admin_set_notification_time':
-          deleteMessage(bot, chatId, message_id)
-          await adminController.setNotificationTime(bot, chatId); 
-          break;
-
-        case 'admin_send_broadcast':
-          deleteMessage(bot, chatId, message_id)
-          Enable=true;
-          await bot.sendMessage(chatId, "📢 Введите сообщение для рассылки:");
-           
-          break;
-        case 'admin_back_to_menu':
-          await adminController.showAdminPanel(bot, chatId);
-          break;
-        case 'admin_delete_user':
-          await bot.sendMessage(chatId, "🗑 Введите команду:\n/delete_user username");
-          break;
-
-        default:
-          if (data.startsWith('admin_set_time_')) {
-            await adminController.handleSetTime(bot, query);
-          }
-        else  if (data.startsWith('admin_select_ingredient_')) {
-            await adminController.deleteIngredient(bot, query);
-          } else if (data.startsWith('admin_ingredient_prev_page_') || data.startsWith('admin_ingredient_next_page_')) {
-            await adminController.showIngredients(bot, query);
-          } else if (data.startsWith('use_template_')) {
-            await exports.handleUseTemplate(bot, query);
-          } else if (data.startsWith('select_category_')) {
-            await userController.selectCategory(bot, query);
-          } else if (data.startsWith('add_ingredient_to_menu_')) {
-            await userController.addIngredientToMenu(bot, query);
-          }
-          break;
-      }
-
+    
+    if (data.startsWith('category_')) {
+      const category = data.replace('category_', '');
+      await userController.showIngredientsInCategory(bot, chatId, category);
       return;
     }
 
-    // 👤 Пользовательские действия
-    switch (true) {
-      case data === 'register_client':
-        await botController.registerUserCallback(bot, query);
-        break;
+    if(data === 'register_client'){
+      botController.registerUserCallback(bot, query)
+      return;
+    }
+    // Защита от незарегистрированных пользователей
+    if (!requester || !requester.isRegistered) {
+      return bot.answerCallbackQuery(query.id, "⚠️ Вы не зарегистрированы.", true);
+    }
 
-      case data === 'select_template':
-        await userController.showTemplateMenu(bot, chatId);
-        break;
+    // Обработка главного меню
+    if (data === 'main_menu') {
+      await botController.showMainMenu(bot, chatId);
+      return;
+    }
+     // Обработка "Мои заявки"
+    if (data === 'my_orders') {
+      await botController.showMyOrders(bot, chatId);
+      return;
+    }
 
-      case data === 'get_menu_today':
-        await bot.sendMessage(chatId, "📅 Получение сегодняшнего меню...");
-        break;
+    // Обработка просмотра деталей заказа
+    if (data.startsWith('order_details_')) {
+      const orderId = data.replace('order_details_', '');
+      await botController.showOrderDetails(bot, chatId, orderId);
+      return;
+    }
 
-      case data === 'create_new_template':
-        await bot.sendMessage(chatId, "Введите имя нового шаблона:");
-        break;
+    // Обработка "Сделать заявку"
+    if (data === 'make_order') {
+      await userController.showCategoriesMenu(bot, chatId);
+      return;
+    }
 
-      case data === 'user_add_ingredient':
-        await userController.showCategories(bot, chatId);
-        break;
+    // Обработка категорий
+    if (data.startsWith('category_')) {
+      const category = data.replace('category_', '');
+      await userController.showIngredientsInCategory(bot, chatId, category);
+      return;
+    }
 
-      case data === 'user_edit_ingredients':
-        await userController.handleEditIngredients(bot, query);
-        break;
+    // Обработка ингредиентов
+    if (data.startsWith('ingredient_')) {
+      const ingredientId = data.replace('ingredient_', '');
+      await userController.showIngredientQuantityOptions(bot, chatId, ingredientId);
+      return;
+    }
 
-      case data === 'user_confirm_order':
-        await userController.handleMakeOrder(bot, query);
-        break;
+    // Обработка выбора количества
+    if (data.startsWith('quantity_')) {
+      const [_, ingredientId, amount] = data.split('_');
+      await userController.handleQuantitySelection(bot, chatId, ingredientId, amount);
+      return;
+    }
 
-      case data.startsWith('use_template_'):
-        await userController.handleUseTemplate(bot, query);
-        break;
+    // Обработка отправки заказа
+    if (data === 'submit_order') {
+      await userController.submitOrder(bot, chatId);
+      return;
+    }
 
-      case data.startsWith('select_category_'):
-        await userController.selectCategory(bot, query);
-        break;
+    // Обработка "Комментарии"
+    if (data === 'enter_comment') {
+      await userController.enterCommentMode(bot, chatId);
+      return;
+    }
 
-      case data.startsWith('select_ingredient_for_menu_'):
-        await userController.handleSelectIngredientForMenu(bot, query);
-        break;
-
-      case data.startsWith('add_ingredient_to_menu_'):
-        await userController.addIngredientToMenu(bot, query);
-        break;
-
-      case data.startsWith('edit_ingredient_'):
-        await userController.handleSelectIngredientForEdit(bot, query);
-        break;
-
-      case data === 'cancel_selection':
-        await bot.editMessageText(
-          "❌ Вы отменили действие.",
-          chatId,
-          message_id,
-          {
-            reply_markup: {
-              inline_keyboard: [[{
-                text: '⬅️ Вернуться к шаблонам',
-                callback_data: 'select_template'
-              }]]
-            }
+    // Обработка админских действий
+    if (requester.role === 'admin') {
+      switch (data) {
+        case 'admin_add_ingredient':
+          await bot.sendMessage(chatId, "➕ Введите команду:\n/add_ingredient имя единица_измерения категория фасовка_количество мин_заказ макс_заказ");
+          break;
+        
+        case 'admin_list_templates':
+          await adminController.listTemplates(bot, query);
+          break;
+          
+        case 'admin_set_notification_time':
+          await adminController.setNotificationTime(bot, query);
+          break;
+          
+        case 'admin_send_broadcast':
+          await adminController.broadcastMessage(bot, query);
+          break;
+          
+        default:
+          if (data.startsWith('admin_select_ingredient_')) {
+            await adminController.deleteIngredient(bot, query);
+          } else if (data.startsWith('admin_ingredient_prev_page_') || data.startsWith('admin_ingredient_next_page_')) {
+            await adminController.showIngredients(bot, query);
           }
-        );
-        break;
+          break;
+      }
+      return;
+    }
 
+    // Обработка остальных действий
+    switch (data) {
+      case 'contact_info':
+        await botController.showContactInfo(bot, chatId);
+        break;
+        
+      case 'bot_info':
+        await botController.showBotInfo(bot, chatId);
+        break;
+        
+      case 'my_orders':
+        await botController.showMyOrders(bot, chatId);
+        break;
+        
       default:
         console.warn(`Неизвестное действие: ${data}`);
         await bot.answerCallbackQuery(query.id, "🚫 Неизвестное действие", true);
@@ -288,7 +294,6 @@ bot.on('callback_query', async (query) => {
   }
 });
 
-// Ежедневная рассылка
 scheduleJob('0 9 * * *', async () => {
   await sendDailyMenu(bot);
 });

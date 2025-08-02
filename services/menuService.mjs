@@ -12,4 +12,4 @@ export const sendDailyMenuToUser = async (bot, telegramId) => {
     ).join('\n');
 
   await bot.sendMessage(telegramId, message);
-};
+};``
