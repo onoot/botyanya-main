@@ -6,18 +6,11 @@ export default (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
-    menuId: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
     ingredientId: {
-      type: DataTypes.INTEGER,
-      allowNull: false
+      type: DataTypes.JSON,
+      allowNull: false,
+      default: []
     },
-    requiredAmount: {
-      type: DataTypes.FLOAT,
-      allowNull: false
-    }
   }, {
     tableName: 'MenuItems',
     timestamps: true,

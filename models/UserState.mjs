@@ -1,4 +1,3 @@
-// models/UserState.mjs
 export default (sequelize, DataTypes) => {
   const UserState = sequelize.define('UserState', {
     id: {
@@ -8,19 +7,23 @@ export default (sequelize, DataTypes) => {
     },
     telegramId: {
       type: DataTypes.STRING,
-      unique: true
+      unique: true,
+      field: 'telegram_id' // Явно указываем соответствие с БД
     },
-    userId: {
+    userId: { 
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: true,
+      field: 'user_id' 
     },
     currentMenuId: {
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: true,
+      field: 'current_menu_id'
     },
     editingIngredientId: {
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: true,
+      field: 'editing_ingredient_id'
     },
     step: {
       type: DataTypes.STRING,
@@ -28,11 +31,13 @@ export default (sequelize, DataTypes) => {
     },
     notificationTime: {
       type: DataTypes.STRING,
-      defaultValue: '09:00'
+      defaultValue: '09:00',
+      field: 'notification_time'
     },
     currentOrder: {
       type: DataTypes.JSON,
-      defaultValue: {}
+      defaultValue: {},
+      field: 'current_order'
     },
     comment: {
       type: DataTypes.STRING,

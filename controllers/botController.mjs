@@ -1,6 +1,7 @@
 // controllers/botController.mjs
 import db from '../models/index.mjs';
 import { deleteMessage } from '../utils/botUtils.mjs';
+import { Op } from 'sequelize';
 
 export const startCommand = async (bot, msg) => {
   const chatId = msg.chat.id;
@@ -134,10 +135,9 @@ export const showBotInfo = async (bot, chatId) => {
 
   await bot.sendMessage(chatId, info, keyboard);
 };
-
 export const showMyOrders = async (bot, chatId) => {
   try {
-    // Сначала получаем пользователя
+   // Сначала получаем пользователя
     const user = await db.User.findOne({ where: { telegramId: chatId.toString() } });
     if (!user) {
       await bot.sendMessage(chatId, "❌ Пользователь не найден.");
@@ -148,7 +148,8 @@ export const showMyOrders = async (bot, chatId) => {
     const orders = await db.Menu.findAll({
       where: { 
         owner_id: user.id,
-        is_template: false
+        // Исправлено: Op.gt (greater than) вместо Op.get
+        is_template: { [Op.gt]: 0 }
       },
       order: [['created_at', 'DESC']],
       limit: 5,
@@ -171,9 +172,10 @@ export const showMyOrders = async (bot, chatId) => {
     
     orders.forEach(order => {
       message += `${order.name}\n`;
+      // Исправлена опечатка: order.od -> order.id
       keyboard.push([{
-        text: `Подробнее о заказе ${order.name}`,
-        callback_data: `order_details_${order.od}`
+        text: `Подробнее о ${order.name}`,
+        callback_data: `order_details_${order.id}`
       }]);
     });
 
@@ -196,7 +198,7 @@ export const showOrderDetails = async (bot, chatId, orderId) => {
   try {
     // ✅ Получаем заказ
     const order = await db.Menu.findOne({
-      where: { id: orderId, is_template: false },
+      where: { id: orderId },
       raw: true
     });
 
@@ -204,30 +206,47 @@ export const showOrderDetails = async (bot, chatId, orderId) => {
       return bot.sendMessage(chatId, "❌ Заказ не найден.");
     }
 
-    // ✅ Получаем элементы заказа
-    const menuItems = await db.MenuItem.findAll({
-      where: { menu_id: orderId },
+    // ✅ В новой структуре is_template содержит ID связанного MenuItem
+    if (!order.is_template || order.is_template <= 0) {
+      return bot.sendMessage(chatId, "📦 Заказ найден, но данные повреждены.");
+    }
+
+    // ✅ Получаем связанный MenuItem
+    const menuItem = await db.MenuItem.findOne({
+      where: { id: order.is_template },
       raw: true
     });
 
-    if (menuItems.length === 0) {
+    if (!menuItem) {
+      return bot.sendMessage(chatId, "📦 Заказ найден, но данные повреждены (MenuItem не найден).");
+    }
+
+    // ✅ Получаем данные из ingredientId (массив объектов { id, quantity })
+    const items = Array.isArray(menuItem.ingredientId) ? menuItem.ingredientId : [];
+    
+    if (items.length === 0) {
       return bot.sendMessage(chatId, "📦 Заказ найден, но в нём нет ингредиентов.");
     }
 
+    // ✅ Получаем ID ингредиентов
+    const ingredientIds = items.map(item => item.id);
+    
     // ✅ Получаем ингредиенты
-    const ingredientIds = menuItems.map(item => item.ingredient_id);
     const ingredients = await db.Ingredient.findAll({
       where: { id: ingredientIds },
       raw: true
     });
 
     // ✅ Формируем сообщение
-    let message = `📦 Детали заказа #${order.id} от ${new Date(order.created_at).toLocaleDateString()}:\n\n`;
+    let message = `📦 Детали "${order.name}":\n\n`;
 
-    for (const item of menuItems) {
-      const ingredient = ingredients.find(ing => ing.id === item.ingredient_id);
+    // Используем данные из массива items
+    for (const item of items) {
+      const ingredient = ingredients.find(ing => ing.id === item.id);
       if (ingredient) {
-        message += `${ingredient.name} — ${item.required_amount} ${ingredient.unit}\n`;
+        message += `${ingredient.name} — ${item.quantity} ${ingredient.unit}\n`;
+      } else {
+        message += `Неизвестный ингредиент (ID: ${item.id}) — ${item.quantity}\n`;
       }
     }
 
