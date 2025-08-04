@@ -61,14 +61,16 @@ export const registerUserCallback = async (bot, query) => {
 
     const messageText = `✅ Вы успешно зарегистрированы как клиент, @${userData.username}!\nТеперь вы можете создавать меню и отправлять заявки.`;
 
-    const keyboard = {
-      reply_markup: {
-        inline_keyboard: [[{
-          text: '🍽 Выбрать шаблон меню',
-          callback_data: 'make_order'
-        }]]
-      }
-    };
+   const keyboard = {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '🛒 Сделать заявку', callback_data: 'make_order' }],
+        [{ text: '📞 Контактная информация', callback_data: 'contact_info' }],
+        [{ text: 'ℹ️ Информация о боте', callback_data: 'bot_info' }],
+        [{ text: '📝 Мои заявки', callback_data: 'my_orders' }]
+      ]
+    }
+  };
 
     // Сначала удаляем старое сообщение
     await bot.deleteMessage(chatId, message_id).catch(() => { });
