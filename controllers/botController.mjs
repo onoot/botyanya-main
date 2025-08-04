@@ -27,7 +27,7 @@ export const startCommand = async (bot, msg) => {
       return showMainMenu(bot, chatId);
     }
 
-    const messageText = `👋 Здравствуйте, @${(userData.username||(userData.first_name+' '+userData.last_name)||"пользователь")}!\nНажмите кнопку ниже, чтобы зарегистрироваться как клиент.`;
+    const messageText = `👋 Здравствуйте, ${('@'+userData.username||(userData.first_name+' '+userData.last_name)||"пользователь")}!\nНажмите кнопку ниже, чтобы зарегистрироваться как клиент.`;
     const keyboard = {
       reply_markup: {
         inline_keyboard: [[{
@@ -51,7 +51,7 @@ export const registerUserCallback = async (bot, query) => {
   const userData = query.from;
 
   try {
-    const user = await db.User.findOne({ where: { username: userData.username } });
+    const user = await db.User.findOne({ where: { telegramId: userData.id.toString() } });
     if (!user) {
       await bot.sendMessage(chatId, "❌ Ошибка: пользователь не найден.");
       return;
@@ -59,7 +59,7 @@ export const registerUserCallback = async (bot, query) => {
 
     await user.update({ isRegistered: true });
 
-    const messageText = `✅ Вы успешно зарегистрированы как клиент, @${userData.username}!\nТеперь вы можете создавать меню и отправлять заявки.`;
+    const messageText = `✅ Вы успешно зарегистрированы как клиент, ${('@'+userData.username||(userData.first_name+' '+userData.last_name)||"пользователь")}!\nТеперь вы можете создавать меню и отправлять заявки.`;
 
    const keyboard = {
     reply_markup: {
