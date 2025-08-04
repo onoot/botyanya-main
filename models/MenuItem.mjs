@@ -11,6 +11,10 @@ export default (sequelize, DataTypes) => {
       allowNull: false,
       default: []
     },
+    comment: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   }, {
     tableName: 'MenuItems',
     timestamps: true,

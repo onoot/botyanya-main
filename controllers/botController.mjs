@@ -7,13 +7,13 @@ export const startCommand = async (bot, msg) => {
   const chatId = msg.chat.id;
   const userData = msg.from;
 
-  if (!userData.username) {
-    return bot.sendMessage(chatId, "⚠️ Для использования бота требуется Telegram-юзернейм.");
-  }
+  // if (!userData.username) {
+  //   return bot.sendMessage(chatId, "⚠️ Для использования бота требуется Telegram-юзернейм.");
+  // }
 
   try {
     const [user, created] = await db.User.findOrCreate({
-      where: { username: userData.username },
+      where: { telegramId: userData.id.toString() },
       defaults: {
         telegramId: userData.id.toString(),
         firstName: userData.first_name || '',
@@ -27,7 +27,7 @@ export const startCommand = async (bot, msg) => {
       return showMainMenu(bot, chatId);
     }
 
-    const messageText = `👋 Здравствуйте, @${userData.username}!\nНажмите кнопку ниже, чтобы зарегистрироваться как клиент.`;
+    const messageText = `👋 Здравствуйте, @${(userData.username||(userData.first_name+' '+userData.last_name)||"пользователь")}!\nНажмите кнопку ниже, чтобы зарегистрироваться как клиент.`;
     const keyboard = {
       reply_markup: {
         inline_keyboard: [[{
