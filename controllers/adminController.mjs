@@ -37,7 +37,6 @@ export const exportOrdersByCategory = async (bot, chatId) => {
     await bot.sendMessage(chatId, "❌ Не удалось загрузить категории.");
   }
 };
-
 export const handleExportCategory = async (bot, query) => {
   const chatId = query.message.chat.id;
   const data = query.data;
@@ -159,7 +158,7 @@ export const handleExportCategory = async (bot, query) => {
     }
 
     // Создаем временный каталог
-    const tempDir = path.join('./', '..', 'temp');
+    const tempDir = path.join(process.cwd(), 'temp');
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
@@ -185,13 +184,22 @@ export const handleExportCategory = async (bot, query) => {
       return bot.sendMessage(chatId, "❌ Не удалось сохранить файл.");
     }
 
-    // Отправляем файл из системы
+    // Проверяем размер файла
+    const stats = fs.statSync(filePath);
+    console.log(`Размер файла: ${stats.size} байт`);
+    if (stats.size === 0) {
+      return bot.sendMessage(chatId, "❌ Сгенерированный файл пустой.");
+    }
+
+    // ОСНОВНОЕ ИСПРАВЛЕНИЕ: Правильная отправка файла
     try {
       await bot.sendDocument(
         chatId,
-        { source: fs.createReadStream(filePath), filename: filename },
+        fs.createReadStream(filePath),  // Поток передаем НАПРЯМУЮ как второй аргумент
         {
-          caption: `✅ Выгрузка всех заказов\nКатегория: "${category}"\nСтрок: ${exportData.length}`
+          caption: `✅ Выгрузка всех заказов\nКатегория: "${category}"\nСтрок: ${exportData.length}`,
+          filename: filename,  // Имя файла передаем через опции
+          mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }
       );
     } catch (sendErr) {
