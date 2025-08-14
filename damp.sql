@@ -1,27 +1,39 @@
--- --------------------------------------------------------
--- Хост:                         127.0.0.1
--- Версия сервера:               5.7.33 - MySQL Community Server (GPL)
--- ОС Сервера:                   Win64
--- HeidiSQL Версия:              11.3.0.6295
--- --------------------------------------------------------
+-- phpMyAdmin SQL Dump
+-- version 4.9.7
+-- https://www.phpmyadmin.net/
+--
+-- Хост: localhost
+-- Время создания: Авг 14 2025 г., 13:03
+-- Версия сервера: 8.0.34-26-beget-1-1
+-- Версия PHP: 5.6.40
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
+SET time_zone = "+00:00";
+
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET NAMES utf8 */;
-/*!50503 SET NAMES utf8mb4 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
--- -- Дамп структуры базы данных kaseevzk_forms
--- CREATE DATABASE IF NOT EXISTS `kaseevzk_forms` 
---   DEFAULT CHARACTER SET utf8mb4 
---   COLLATE utf8mb4_unicode_ci;
--- USE `kaseevzk_forms`;
+--
+-- База данных: `kaseevzk_forms`
+--
 
--- Дамп структуры для таблица kaseevzk_forms.Ingredients
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `Ingredients`
+--
+-- Создание: Авг 14 2025 г., 09:47
+-- Последнее обновление: Авг 14 2025 г., 09:47
+--
+
 DROP TABLE IF EXISTS `Ingredients`;
-CREATE TABLE IF NOT EXISTS `Ingredients` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `Ingredients` (
+  `id` int NOT NULL,
   `name` varchar(255) NOT NULL,
   `unit` varchar(50) NOT NULL,
   `category` varchar(255) NOT NULL,
@@ -30,122 +42,198 @@ CREATE TABLE IF NOT EXISTS `Ingredients` (
   `min_order` float DEFAULT '1',
   `max_order` float DEFAULT '1000',
   `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4;
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Дамп данных таблицы kaseevzk_forms.Ingredients: ~24 rows (приблизительно)
-/*!40000 ALTER TABLE `Ingredients` DISABLE KEYS */;
+--
+-- Дамп данных таблицы `Ingredients`
+--
+
 INSERT INTO `Ingredients` (`id`, `name`, `unit`, `category`, `packaging`, `packaging_amount`, `min_order`, `max_order`, `created_at`, `updated_at`) VALUES
-    (1, 'Говядина, подгруппа 1.1', 'кг', 'Мясо и печень 🥩', 'коробка', 20, 20, 600, NOW(), NOW()),
-    (2, 'Печень', 'кг', 'Мясо и печень 🥩', 'коробка', 20, 20, 200, NOW(), NOW()),
-    (3, 'Минтай', 'кг', 'Рыба 🐟', 'коробка', 24, 24, 600, NOW(), NOW()),
-    (4, 'Горбуша', 'кг', 'Рыба 🐟', 'коробка', 22, 22, 594, NOW(), NOW()),
-    (5, 'Горох', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, NOW(), NOW()),
-    (6, 'Длинный рис', 'кг', 'Крупы 🌾', 'упаковка', 25, 25, 200, NOW(), NOW()),
-    (7, 'Круглый рис', 'кг', 'Крупы 🌾', 'упаковка', 25, 25, 200, NOW(), NOW()),
-    (8, 'Пропаренный рис', 'кг', 'Крупы 🌾', 'упаковка', 25, 25, 200, NOW(), NOW()),
-    (9, 'Вермишель', 'кг', 'Крупы 🌾', 'упаковка', 20, 20, 200, NOW(), NOW()),
-    (10, 'Рожки', 'кг', 'Крупы 🌾', 'упаковка', 20, 20, 200, NOW(), NOW()),
-    (11, 'Перловая', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, NOW(), NOW()),
-    (12, 'Ячневая', 'кг', 'Крупы 🌾', 'упаковка', 40, 40, 200, NOW(), NOW()),
-    (13, 'Манка', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, NOW(), NOW()),
-    (14, 'Пшеничная', 'кг', 'Крупы 🌾', 'упаковка', 40, 40, 200, NOW(), NOW()),
-    (15, 'Пшено', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, NOW(), NOW()),
-    (16, 'Овсянка', 'кг', 'Крупы 🌾', 'упаковка', 5, 5, 50, NOW(), NOW()),
-    (17, 'Гречневая', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, NOW(), NOW()),
-    (18, 'Зеленый горошек', 'шт', 'Бакалея 🛒', 'упаковка', 12, 12, 360, NOW(), NOW()),
-    (19, 'Повидло', 'шт', 'Бакалея 🛒', 'упаковка', 8, 8, 256, NOW(), NOW()),
-    (20, 'Икра кабачковая', 'шт', 'Бакалея 🛒', 'упаковка', 8, 8, 256, NOW(), NOW()),
-    (21, 'Масло растительное', 'л', 'Бакалея 🛒', 'упаковка', 15, 15, 180, NOW(), NOW()),
-    (22, 'Кукуруза конс.', 'шт', 'Бакалея 🛒', 'упаковка', 12, 12, 360, NOW(), NOW()),
-    (23, 'Томатная паста', 'шт', 'Бакалея 🛒', 'упаковка', 6, 6, 96, NOW(), NOW()),
-    (24, 'Печенье', 'шт', 'Бакалея 🛒', 'упаковка', 5, 5, 40, NOW(), NOW());
-/*!40000 ALTER TABLE `Ingredients` ENABLE KEYS */;
+(1, 'Говядина, подгруппа 1.1', 'кг', 'Мясо и печень 🥩', 'коробка', 20, 20, 600, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(2, 'Печень', 'кг', 'Мясо и печень 🥩', 'коробка', 20, 20, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(3, 'Минтай', 'кг', 'Рыба 🐟', 'коробка', 24, 24, 600, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(4, 'Горбуша', 'кг', 'Рыба 🐟', 'коробка', 22, 22, 594, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(5, 'Горох', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(6, 'Пропаренный рис', 'кг', 'Крупы 🌾', 'упаковка', 25, 25, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(7, 'Вермишель', 'кг', 'Крупы 🌾', 'упаковка', 20, 20, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(8, 'Рожки', 'кг', 'Крупы 🌾', 'упаковка', 20, 20, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(9, 'Перловая', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(10, 'Ячневая', 'кг', 'Крупы 🌾', 'упаковка', 40, 40, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(11, 'Манка', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(12, 'Пшеничная', 'кг', 'Крупы 🌾', 'упаковка', 40, 40, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(13, 'Пшено', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(14, 'Овсянка', 'кг', 'Крупы 🌾', 'упаковка', 5, 5, 50, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(15, 'Гречневая', 'кг', 'Крупы 🌾', 'мешок', 50, 50, 200, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(16, 'Зеленый горошек (упаковка 12 шт, 5,04кг)', 'шт', 'Бакалея 🛒', 'упаковка', 12, 12, 360, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(17, 'Повидло (упаковка 8 шт, 5,04кг)', 'шт', 'Бакалея 🛒', 'упаковка', 8, 8, 256, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(18, 'Икра кабачковая (4,08кг)', 'шт', 'Бакалея 🛒', 'упаковка', 8, 8, 256, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(19, 'Масло растительное (упаковка 15 шт, 15л)', 'л', 'Бакалея 🛒', 'упаковка', 15, 15, 180, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(20, 'Кукуруза конс. (упаковка 12 шт, 4,5кг)', 'шт', 'Бакалея 🛒', 'упаковка', 12, 12, 360, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(21, 'Томатная паста (упаковка 6 шт, 6кг)', 'шт', 'Бакалея 🛒', 'упаковка', 6, 6, 96, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(22, 'Печенье (упаковка 5кг)', 'шт', 'Бакалея 🛒', 'упаковка', 5, 5, 40, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(23, 'Пряники (упаковка 3кг)', 'шт', 'Бакалея 🛒', 'упаковка', 1, 1, 30, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(24, 'Дрожжи сухие (шт. 0,1кг)', 'шт', 'Бакалея 🛒', 'упаковка', 1, 1, 30, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(25, 'Ванилин (шт. 0,0015кг)', 'шт', 'Бакалея 🛒', 'упаковка', 1, 1, 30, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(26, 'Чай (шт. 0,5кг)', 'шт', 'Бакалея 🛒', 'упаковка', 1, 1, 30, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(27, 'Какао (шт. 0,1кг)', 'шт', 'Бакалея 🛒', 'упаковка', 1, 1, 30, '2025-08-14 12:47:50', '2025-08-14 12:47:50'),
+(28, 'Кофейный напиток (шт. 0,1кг)', 'шт', 'Бакалея 🛒', 'упаковка', 1, 1, 30, '2025-08-14 12:47:50', '2025-08-14 12:47:50');
 
--- Дамп структуры для таблица kaseevzk_forms.Menus
-DROP TABLE IF EXISTS `Menus`;
-CREATE TABLE IF NOT EXISTS `Menus` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
-  `is_template` tinyint(1) DEFAULT '0',
-  `owner_id` int(11) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+-- --------------------------------------------------------
 
--- Дамп данных таблицы kaseevzk_forms.Menus: ~2 rows (приблизительно)
-/*!40000 ALTER TABLE `Menus` DISABLE KEYS */;
-INSERT INTO `Menus` (`id`, `name`, `is_template`, `owner_id`, `created_at`, `updated_at`) VALUES
-    (1, 'Шаблон по умолчанию', 1, NULL, NOW(), NOW()),
-    (2, 'Завтрак на неделю', 1, NULL, NOW(), NOW());
-/*!40000 ALTER TABLE `Menus` ENABLE KEYS */;
+--
+-- Структура таблицы `MenuItems`
+--
+-- Создание: Авг 14 2025 г., 09:49
+--
 
--- Дамп структуры для таблица kaseevzk_forms.MenuItems
 DROP TABLE IF EXISTS `MenuItems`;
-CREATE TABLE IF NOT EXISTS `MenuItems` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `menu_id` int(11) NOT NULL,
-  `ingredient_id` int(11) NOT NULL,
-  `required_amount` float NOT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE `MenuItems` (
+  `id` int NOT NULL,
+  `ingredient_id` json NOT NULL,
+  `comment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Дамп данных таблицы kaseevzk_forms.MenuItems: ~0 rows (приблизительно)
-/*!40000 ALTER TABLE `MenuItems` DISABLE KEYS */;
-/*!40000 ALTER TABLE `MenuItems` ENABLE KEYS */;
+-- --------------------------------------------------------
 
--- Дамп структуры для таблица kaseevzk_forms.Users
+--
+-- Структура таблицы `Menus`
+--
+-- Создание: Авг 14 2025 г., 09:49
+--
+
+DROP TABLE IF EXISTS `Menus`;
+CREATE TABLE `Menus` (
+  `id` int NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `comment` text COLLATE utf8mb4_unicode_ci,
+  `is_template` int DEFAULT NULL,
+  `owner_id` int NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `Users`
+--
+-- Создание: Авг 14 2025 г., 10:03
+--
+
 DROP TABLE IF EXISTS `Users`;
-CREATE TABLE IF NOT EXISTS `Users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `telegram_id` varchar(50) NOT NULL,
-  `username` varchar(255) DEFAULT NULL,
-  `first_name` varchar(255) DEFAULT NULL,
-  `last_name` varchar(255) DEFAULT NULL,
-  `role` varchar(50) DEFAULT 'user',
+CREATE TABLE `Users` (
+  `id` int NOT NULL,
+  `telegram_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `username` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `organisation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `first_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `last_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `role` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'user',
   `is_registered` tinyint(1) DEFAULT '0',
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `telegram_id` (`telegram_id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Дамп данных таблицы kaseevzk_forms.Users: ~2 rows (приблизительно)
-/*!40000 ALTER TABLE `Users` DISABLE KEYS */;
-INSERT INTO `Users` (`id`, `telegram_id`, `username`, `first_name`, `last_name`, `role`, `is_registered`, `created_at`, `updated_at`) VALUES
-    (1, '7810185577', 'admin', 'Админ', 'Бота', 'admin', 1, NOW(), NOW()),
-    (2, '123456789', 'user123', 'Иван', 'Иванов', 'user', 1, NOW(), NOW());
-/*!40000 ALTER TABLE `Users` ENABLE KEYS */;
+-- --------------------------------------------------------
 
--- Дамп структуры для таблица kaseevzk_forms.UserStates
+--
+-- Структура таблицы `UserStates`
+--
+-- Создание: Авг 14 2025 г., 10:03
+--
+
 DROP TABLE IF EXISTS `UserStates`;
-CREATE TABLE IF NOT EXISTS `UserStates` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `telegram_id` varchar(50) NOT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `current_menu_id` int(11) DEFAULT NULL,
-  `editing_ingredient_id` int(11) DEFAULT NULL,
-  `step` varchar(255) DEFAULT NULL,
-  `notification_time` varchar(10) DEFAULT '09:00',
+CREATE TABLE `UserStates` (
+  `id` int NOT NULL,
+  `telegram_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_id` int DEFAULT NULL,
+  `current_menu_id` int DEFAULT NULL,
+  `editing_ingredient_id` int DEFAULT NULL,
+  `step` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notification_time` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '09:00',
   `current_order` json DEFAULT NULL,
-  `comment` varchar(1000) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `telegram_id` (`telegram_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `comment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `last_bot_message_id` int DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Дамп данных таблицы kaseevzk_forms.UserStates: ~0 rows (приблизительно)
-/*!40000 ALTER TABLE `UserStates` DISABLE KEYS */;
-/*!40000 ALTER TABLE `UserStates` ENABLE KEYS */;
+--
+-- Индексы сохранённых таблиц
+--
 
-/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
-/*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
+--
+-- Индексы таблицы `Ingredients`
+--
+ALTER TABLE `Ingredients`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `name` (`name`);
+
+--
+-- Индексы таблицы `MenuItems`
+--
+ALTER TABLE `MenuItems`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Индексы таблицы `Menus`
+--
+ALTER TABLE `Menus`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Индексы таблицы `Users`
+--
+ALTER TABLE `Users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `telegram_id` (`telegram_id`),
+  ADD UNIQUE KEY `username` (`username`);
+
+--
+-- Индексы таблицы `UserStates`
+--
+ALTER TABLE `UserStates`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `telegram_id` (`telegram_id`);
+
+--
+-- AUTO_INCREMENT для сохранённых таблиц
+--
+
+--
+-- AUTO_INCREMENT для таблицы `Ingredients`
+--
+ALTER TABLE `Ingredients`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+
+--
+-- AUTO_INCREMENT для таблицы `MenuItems`
+--
+ALTER TABLE `MenuItems`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `Menus`
+--
+ALTER TABLE `Menus`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `Users`
+--
+ALTER TABLE `Users`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `UserStates`
+--
+ALTER TABLE `UserStates`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+COMMIT;
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

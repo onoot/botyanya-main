@@ -1,5 +1,6 @@
 // controllers/userController.mjs
 import db from '../models/index.mjs';
+import {sendOrEditMessage} from '../utils/botUtils.mjs'
 
 export const showCategoriesMenu = async (bot, chatId) => {
   try {
@@ -13,7 +14,7 @@ export const showCategoriesMenu = async (bot, chatId) => {
 
     // Проверяем, есть ли категории
     if (!categories || categories.length === 0) {
-      return bot.sendMessage(chatId, "❌ Категории отсутствуют. Админ должен добавить ингредиенты.");
+      return sendOrEditMessage(bot, chatId, "❌ Категории отсутствуют. Админ должен добавить ингредиенты.");
     }
 
     // Формируем клавиатуру
@@ -25,13 +26,13 @@ export const showCategoriesMenu = async (bot, chatId) => {
     // Добавляем кнопку "Назад"
     keyboard.push([{ text: '⬅️ Назад', callback_data: 'main_menu' }]);
 
-    await bot.sendMessage(chatId, "Выберите категорию:", {
+    await sendOrEditMessage(bot, chatId, "Выберите категорию:", {
       reply_markup: { inline_keyboard: keyboard }
     });
 
   } catch (err) {
     console.error("Ошибка загрузки категорий:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось загрузить категории.");
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось загрузить категории.");
   }
 };
 
@@ -43,7 +44,7 @@ export const showIngredientsInCategory = async (bot, chatId, category) => {
     });
 
     if (!ingredients.length) {
-      return bot.sendMessage(chatId, "❌ В этой категории нет ингредиентов.");
+      return sendOrEditMessage(bot, chatId, "❌ В этой категории нет ингредиентов.");
     }
 
     const keyboard = ingredients.map(ingredient => [{
@@ -52,28 +53,28 @@ export const showIngredientsInCategory = async (bot, chatId, category) => {
     }]);
 
     keyboard.push(
-      [{ text: '📝 Комментарии', callback_data: 'enter_comment' }],
+      [{ text: '📝 Комментарий к заказу', callback_data: 'enter_comment' }],
       [{ text: '⬅️ Назад', callback_data: 'make_order' }]
     );
 
-    await bot.sendMessage(chatId, `Ингредиенты в категории "${category}":`, {
+    await sendOrEditMessage(bot, chatId, `Ингредиенты в категории "${category}":`, {
       reply_markup: { inline_keyboard: keyboard }
     });
 
   } catch (err) {
     console.error("Ошибка загрузки ингредиентов:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось загрузить ингредиенты.");
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось загрузить ингредиенты.");
   }
 };
 
 export const showIngredientQuantityOptions = async (bot, chatId, ingredientId) => {
   try {
-     // 1. Находим пользователя
+    // 1. Находим пользователя
     const user = await db.User.findOne({ 
       where: { telegramId: chatId.toString() } 
     });
     if (!user) {
-      return bot.sendMessage(chatId, "❌ Пользователь не найден.");
+      return sendOrEditMessage(bot, chatId, "❌ Пользователь не найден.");
     }
     
     // 2. Ищем состояние по telegramId
@@ -97,12 +98,12 @@ export const showIngredientQuantityOptions = async (bot, chatId, ingredientId) =
     }
     
     if (!state) {
-      return bot.sendMessage(chatId, "❌ Не удалось создать состояние пользователя.");
+      return sendOrEditMessage(bot, chatId, "❌ Не удалось создать состояние пользователя.");
     }
     
     const ingredient = await db.Ingredient.findByPk(ingredientId, { raw: true });
     if (!ingredient) {
-      return bot.sendMessage(chatId, "❌ Ингредиент не найден.");
+      return sendOrEditMessage(bot, chatId, "❌ Ингредиент не найден.");
     }
     
     const options = [];
@@ -117,22 +118,24 @@ export const showIngredientQuantityOptions = async (bot, chatId, ingredientId) =
     }
     
     const keyboard = [
+      // Кнопки количества — одна строка
       options.map(amount => ({
         text: amount.toString(),
         callback_data: `quantity_${ingredientId}_${amount}`
       }))
     ];
     
+    // ✅ Правильно: одна строка с одной кнопкой
     keyboard.push([
       { text: '⬅️ Назад', callback_data: `category_${ingredient.category || 'main_menu'}` }
     ]);
     
-    await bot.sendMessage(chatId, `Выберите количество для "${ingredient.name || 'Неизвестный'}" (макс. ${max_order} ${ingredient.unit || 'ед'}):`, { 
+    await sendOrEditMessage(bot, chatId, `Выберите количество для "${ingredient.name || 'Неизвестный'}" (макс. ${max_order} ${ingredient.unit || 'ед'}):`, { 
       reply_markup: { inline_keyboard: keyboard } 
     });
   } catch (err) {
     console.error("Ошибка отображения вариантов количества:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось загрузить варианты количества.");
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось загрузить варианты количества.");
   }
 };
 
@@ -144,7 +147,7 @@ export const enterCommentMode = async (bot, chatId) => {
     });
     
     if (!user) {
-      return bot.sendMessage(chatId, "❌ Пользователь не найден.");
+      return sendOrEditMessage(bot, chatId, "❌ Пользователь не найден.");
     }
 
     // 2. Ищем состояние по telegramId
@@ -168,16 +171,104 @@ export const enterCommentMode = async (bot, chatId) => {
     }
 
     if (!state) {
-      return bot.sendMessage(chatId, "❌ Не удалось создать состояние пользователя.");
+      return sendOrEditMessage(bot, chatId, "❌ Не удалось создать состояние пользователя.");
     }
 
     // Устанавливаем шаг для обработки следующего сообщения
     await state.update({ step: 'entering_comment' });
 
-    await bot.sendMessage(chatId, "📝 Введите комментарий к заказу:");
+    const keyboard = [[{ text: '❌Отмена', callback_data: 'main_menu' }]];
+
+    await sendOrEditMessage(bot, chatId, "📝 Введите комментарий к заказу:", {
+      reply_markup: { inline_keyboard: keyboard }
+    });
   } catch (err) {
     console.error("Ошибка перехода в режим комментария:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось перейти в режим комментария.");
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось перейти в режим комментария.");
+  }
+};
+
+/**
+ * Режим редактирования комментария
+ */
+export const editCommentMode = async (bot, chatId) => {
+  try {
+    const state = await db.UserState.findOne({ where: { telegramId: chatId.toString() } });
+    if (!state) {
+      return sendOrEditMessage(bot, chatId, "❌ Ошибка: состояние не найдено.");
+    }
+
+    // Устанавливаем шаг для редактирования
+    await state.update({ step: 'editing_comment' });
+
+    const keyboard = [
+      [{ text: '❌ Отмена', callback_data: 'main_menu' }]
+    ];
+
+    await sendOrEditMessage(bot, chatId, `✏ Введите новый комментарий (старый: "${state.comment || 'отсутствует'}")`, {
+      reply_markup: { inline_keyboard: keyboard }
+    });
+
+  } catch (err) {
+    console.error("Ошибка перехода в режим редактирования комментария:", err);
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось перейти в режим редактирования.");
+  }
+};
+
+/**
+ * Удаление комментария
+ */
+export const deleteComment = async (bot, chatId) => {
+  try {
+    const state = await db.UserState.findOne({ where: { telegramId: chatId.toString() } });
+    if (!state) {
+      return sendOrEditMessage(bot, chatId, "❌ Ошибка: состояние не найдено.");
+    }
+
+    await state.update({ comment: null });
+
+    // Показываем обновлённый список выбранных ингредиентов
+    const order = state.currentOrder || {};
+    const ingredientIds = Object.keys(order).map(id => parseInt(id));
+
+    const ingredients = await db.Ingredient.findAll({
+      where: { id: ingredientIds },
+      raw: true
+    });
+
+    let message = "✅ Выбрано:\n";
+    
+    for (const [id, qty] of Object.entries(order)) {
+      const ing = ingredients.find(i => i.id === parseInt(id));
+      if (ing) {
+        message += `• ${ing.name} — ${qty} ${ing.unit}\n`;
+      } else {
+        message += `• Неизвестный ингредиент (ID: ${id}) — ${qty} ед\n`;
+      }
+    }
+
+    message += "\n💬 Комментарий удалён.";
+
+    const keyboard = [
+      [
+        { text: '👩‍🍳 Отправить заявку', callback_data: 'submit_order' }
+      ],
+      [
+        { text: '➕ Добавить еще', callback_data: 'make_order' },
+        { text: '⬅️ Назад', callback_data: 'main_menu' }
+      ],
+      [
+        { text: '💬 Добавить комментарий', callback_data: 'enter_comment' }
+      ],
+    ];
+
+    await sendOrEditMessage(bot, chatId, message, {
+      reply_markup: { inline_keyboard: keyboard }
+    });
+
+  } catch (err) {
+    console.error("Ошибка удаления комментария:", err);
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось удалить комментарий.");
   }
 };
 
@@ -189,10 +280,10 @@ export const handleQuantitySelection = async (bot, chatId, ingredientId, amount)
     });
     
     if (!user) {
-      return bot.sendMessage(chatId, "❌ Пользователь не найден.");
+      return sendOrEditMessage(bot, chatId, "❌ Пользователь не найден.");
     }
 
-    // 2. Ищем состояние по telegramId (уникальное поле)
+    // 2. Ищем состояние по telegramId
     let state = await db.UserState.findOne({ 
       where: { telegramId: chatId.toString() } 
     });
@@ -201,7 +292,7 @@ export const handleQuantitySelection = async (bot, chatId, ingredientId, amount)
     if (state && !state.userId) {
       await state.update({ userId: user.id });
     }
-    // 4. Если состояние не найдено — создаём новое
+    // 4. Если не найдено — создаём новое
     else if (!state) {
       state = await db.UserState.create({
         telegramId: chatId.toString(),
@@ -213,15 +304,15 @@ export const handleQuantitySelection = async (bot, chatId, ingredientId, amount)
     }
 
     if (!state) {
-      return bot.sendMessage(chatId, "❌ Не удалось создать состояние пользователя.");
+      return sendOrEditMessage(bot, chatId, "❌ Не удалось создать состояние пользователя.");
     }
 
     const ingredient = await db.Ingredient.findByPk(ingredientId);
     if (!ingredient) {
-      return bot.sendMessage(chatId, "❌ Ингредиент не найден.");
+      return sendOrEditMessage(bot, chatId, "❌ Ингредиент не найден.");
     }
 
-    // 5. ПОЛНОСТЬЮ КОПИРУЕМ текущий заказ (ключевое исправление!)
+    // 5. Копируем текущий заказ
     const currentOrder = JSON.parse(JSON.stringify(state.currentOrder || {}));
 
     // 6. Добавляем ингредиент
@@ -230,26 +321,57 @@ export const handleQuantitySelection = async (bot, chatId, ingredientId, amount)
     // 7. Сохраняем
     await state.update({ currentOrder });
 
-    // 8. Проверяем, что сохранилось (читаем свежую запись из БД)
+    // 8. Получаем свежее состояние
     const freshState = await db.UserState.findOne({ 
       where: { telegramId: chatId.toString() } 
     });
-    console.log(`[VERIFY] После сохранения:`, freshState.currentOrder);
 
+    // ✅ 9. Формируем полный список выбранных ингредиентов
+    const order = freshState.currentOrder || {};
+    const ingredientIds = Object.keys(order).map(id => parseInt(id));
+
+    // Получаем сами ингредиенты из БД
+    const ingredients = await db.Ingredient.findAll({
+      where: { id: ingredientIds },
+      raw: true
+    });
+
+    // Формируем сообщение
+    let message = "✅ Выбрано:\n";
+    
+    for (const [id, qty] of Object.entries(order)) {
+      const ing = ingredients.find(i => i.id === parseInt(id));
+      if (ing) {
+        message += `• ${ing.name} — ${qty} ${ing.unit}\n`;
+      } else {
+        message += `• Неизвестный ингредиент (ID: ${id}) — ${qty} ед\n`;
+      }
+    }
+     if (freshState?.dataValues?.comment) {
+      message += `\n💬 Ваш комментарий: ${freshState.comment}`;
+    }
+    // ✅ 10. Кнопки: "Отправить", "Добавить еще", "Назад"
     const keyboard = [
       [
-        { text: '👩‍🍳 Отправить заявку', callback_data: 'submit_order' },
-        { text: '⬅️ Назад', callback_data: `category_${ingredient.category || 'main_menu'}` }
-      ]
+        { text: '👩‍🍳 Отправить заявку', callback_data: 'submit_order' }
+      ],
+      [
+        { text: '➕ Добавить еще', callback_data: 'make_order' },
+        { text: '⬅️ Назад', callback_data: 'main_menu' }
+      ],
+      [
+        { text: '💬Комментарий к заказу', callback_data: 'enter_comment' }
+      ],
     ];
 
-    await bot.sendMessage(chatId, `✅ Выбрано: ${ingredient.name} — ${amount} ${ingredient.unit}`, {
+    // ✅ 11. Отправляем сообщение с полным списком
+    await sendOrEditMessage(bot, chatId, message, {
       reply_markup: { inline_keyboard: keyboard }
     });
 
   } catch (err) {
     console.error("Ошибка выбора количества:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось обновить количество.");
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось обновить количество.");
   }
 };
 
@@ -261,7 +383,7 @@ export const submitOrder = async (bot, chatId) => {
     });
     
     if (!user) {
-      return bot.sendMessage(chatId, "❌ Пользователь не найден.");
+      return sendOrEditMessage(bot, chatId, "❌ Пользователь не найден.");
     }
 
     // 2. Ищем состояние по telegramId
@@ -285,14 +407,14 @@ export const submitOrder = async (bot, chatId) => {
     }
 
     if (!state) {
-      return bot.sendMessage(chatId, "❌ Не удалось создать состояние пользователя.");
+      return sendOrEditMessage(bot, chatId, "❌ Не удалось создать состояние пользователя.");
     }
 
     // 5. ПОЛНОСТЬЮ КОПИРУЕМ текущий заказ
     const currentOrder = JSON.parse(JSON.stringify(state.currentOrder || {}));
     
     if (Object.keys(currentOrder).length === 0) {
-      return bot.sendMessage(chatId, "❌ Ваш заказ пустой.");
+      return sendOrEditMessage(bot, chatId, "❌ Ваш заказ пустой.");
     }
 
     // ✅ 1. Подготавливаем данные для записи MenuItem
@@ -311,7 +433,7 @@ export const submitOrder = async (bot, chatId) => {
     
     // Проверяем, что у нас есть ингредиенты для сохранения
     if (items.length === 0) {
-      return bot.sendMessage(chatId, "❌ Не удалось сохранить заказ: все ингредиенты некорректны.");
+      return sendOrEditMessage(bot, chatId, "❌ Не удалось сохранить заказ: все ингредиенты некорректны.");
     }
     
     // ✅ 2. Создаем запись MenuItem
@@ -386,9 +508,9 @@ export const submitOrder = async (bot, chatId) => {
         inline_keyboard: [[{ text: '🍱 Главная', callback_data: 'main_menu' }]]
       }
     };
-    await bot.sendMessage(chatId, "✅ Ваш заказ успешно отправлен и сохранён!", keyboard);
+    await sendOrEditMessage(bot, chatId, "✅ Ваш заказ успешно отправлен и сохранён!", keyboard);
   } catch (err) {
     console.error("Ошибка отправки заказа:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось отправить заказ.");
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось отправить заказ.");
   }
 };

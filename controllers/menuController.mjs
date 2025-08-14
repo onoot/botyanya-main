@@ -1,6 +1,6 @@
 // controllers/menuController.mjs
 import { getMenuForToday } from '../services/databaseService.mjs';
-import { deleteMessage } from '../utils/botUtils.mjs';
+import { deleteMessage, sendOrEditMessage} from '../utils/botUtils.mjs';
 
 export const addMenuCommand = async (bot, msg) => {
   const chatId = msg.chat.id;
@@ -8,7 +8,7 @@ export const addMenuCommand = async (bot, msg) => {
   const args = text.split(' ').slice(1);
 
   if (args.length < 2) {
-    await bot.sendMessage(chatId, "Используйте: /addmenu ДД.ММ.ГГГГ ингредиент1=количество1 ингредиент2=количество2...");
+    await sendOrEditMessage(chatId, "Используйте: /addmenu ДД.ММ.ГГГГ ингредиент1=количество1 ингредиент2=количество2...");
     return;
   }
 
@@ -20,8 +20,8 @@ export const addMenuCommand = async (bot, msg) => {
 
   try {
     await getMenuForToday(dateStr, items);
-    await bot.sendMessage(chatId, `Меню на ${dateStr} успешно создано.`);
+    await sendOrEditMessage(chatId, `Меню на ${dateStr} успешно создано.`);
   } catch (error) {
-    await bot.sendMessage(chatId, `Ошибка создания меню: ${error.message}`);
+    await sendOrEditMessage(chatId, `Ошибка создания меню: ${error.message}`);
   }
 };

@@ -1,9 +1,11 @@
 // services/menuService.js
+import {sendOrEditMessage} from '../utils/botUtils.mjs'
+
 export const sendDailyMenuToUser = async (bot, telegramId) => {
   const menu = await getMenuForToday(); // Твой SQL-запрос или Sequelize
 
   if (!menu) {
-    return bot.sendMessage(telegramId, "🍽 Меню на сегодня не готово.");
+    return sendOrEditMessage(telegramId, "🍽 Меню на сегодня не готово.");
   }
 
   const message = `📅 Ежедневное меню:\n\n` +
@@ -11,5 +13,5 @@ export const sendDailyMenuToUser = async (bot, telegramId) => {
       `${item.ingredientName} — ${item.requiredAmount}${item.ingredientUnit}`
     ).join('\n');
 
-  await bot.sendMessage(telegramId, message);
+  await sendOrEditMessage(telegramId, message);
 };``

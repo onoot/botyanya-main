@@ -1,15 +1,11 @@
 // controllers/botController.mjs
 import db from '../models/index.mjs';
-import { deleteMessage } from '../utils/botUtils.mjs';
+import { sendOrEditMessage } from '../utils/botUtils.mjs';
 import { Op } from 'sequelize';
 
 export const startCommand = async (bot, msg) => {
   const chatId = msg.chat.id;
   const userData = msg.from;
-
-  // if (!userData.username) {
-  //   return bot.sendMessage(chatId, "⚠️ Для использования бота требуется Telegram-юзернейм.");
-  // }
 
   try {
     const [user, created] = await db.User.findOrCreate({
@@ -29,19 +25,20 @@ export const startCommand = async (bot, msg) => {
 
     const messageText = `👋 Здравствуйте, ${('@'+userData.username||(userData.first_name+' '+userData.last_name)||"пользователь")}!\nНажмите кнопку ниже, чтобы зарегистрироваться как клиент.`;
     const keyboard = {
-      reply_markup: {
-        inline_keyboard: [[{
-          text: '✅ Зарегистрироваться как клиент',
-          callback_data: 'register_client'
-        }]]
-      }
+      inline_keyboard: [[{
+        text: '✅ Зарегистрироваться как клиент',
+        callback_data: 'register_client'
+      }]]
     };
 
-    await bot.sendMessage(chatId, messageText, keyboard);
+    // Используем sendOrEditMessage вместо bot.sendMessage
+    await sendOrEditMessage(bot, chatId, messageText, {
+      reply_markup: keyboard
+    });
 
   } catch (error) {
     console.error("Ошибка при старте:", error);
-    await bot.sendMessage(chatId, "❌ Произошла ошибка. Попробуйте позже.");
+    await sendOrEditMessage(bot, chatId, "❌ Произошла ошибка. Попробуйте позже.");
   }
 };
 
@@ -53,49 +50,95 @@ export const registerUserCallback = async (bot, query) => {
   try {
     const user = await db.User.findOne({ where: { telegramId: userData.id.toString() } });
     if (!user) {
-      await bot.sendMessage(chatId, "❌ Ошибка: пользователь не найден.");
+      await sendOrEditMessage(bot, chatId, "❌ Ошибка: пользователь не найден.");
       return;
     }
 
-    await user.update({ isRegistered: true });
+    // Устанавливаем, что пользователь в процессе регистрации
+    await user.update({ isRegistered: false });
+
+    // Получаем или создаём состояние
+    let state = await db.UserState.findOne({ where: { telegramId: chatId.toString() } });
+    if (!state) {
+      state = await db.UserState.create({
+        telegramId: chatId.toString(),
+        userId: user.id
+      });
+    } else if (!state.userId) {
+      await state.update({ userId: user.id });
+    }
+
+    // Устанавливаем шаг ожидания организации
+    await state.update({ step: 'awaiting_organisation' });
+
+    const messageText = `🏢 Укажите, пожалуйста, полное название вашей организации в формате:\n\nМБДОУ "Детский сад №123"\nили\nГБОУ СОШ №45`;
+
+    await bot.answerCallbackQuery(query.id);
+
+    await sendOrEditMessage(bot, chatId, messageText);
+
+  } catch (err) {
+    console.error("Ошибка регистрации:", err);
+    await sendOrEditMessage(bot, chatId, "❌ Ошибка регистрации. Попробуйте позже.");
+  }
+};
+
+export const registerUserPost = async (bot, query) => {
+  const chatId = query.message.chat.id;
+  const userData = query.from;
+
+  try {
+    const user = await db.User.findOne({ where: { telegramId: userData.id.toString() } });
+    if (!user) {
+      await sendOrEditMessage(bot, chatId, "❌ Ошибка: пользователь не найден. \n/start");
+      return;
+    }
+
+    // Убедимся, что пользователь теперь зарегистрирован
+    if (!user.isRegistered) {
+      await user.update({ isRegistered: true });
+    }
 
     const messageText = `✅ Вы успешно зарегистрированы как клиент, ${('@'+userData.username||(userData.first_name+' '+userData.last_name)||"пользователь")}!\nТеперь вы можете создавать меню и отправлять заявки.`;
 
-   const keyboard = {
-    reply_markup: {
+    const keyboard = {
       inline_keyboard: [
         [{ text: '🛒 Сделать заявку', callback_data: 'make_order' }],
         [{ text: '📞 Контактная информация', callback_data: 'contact_info' }],
         [{ text: 'ℹ️ Информация о боте', callback_data: 'bot_info' }],
         [{ text: '📝 Мои заявки', callback_data: 'my_orders' }]
       ]
+    };
+
+    // Подтверждаем callback (если это настоящий query)
+    if (query.id) {
+      await bot.answerCallbackQuery(query.id).catch(() => {});
     }
-  };
 
-    // Сначала удаляем старое сообщение
-    await bot.deleteMessage(chatId, message_id).catch(() => { });
+    // Отправляем сообщение
+    await sendOrEditMessage(bot, chatId, messageText, {
+      reply_markup: keyboard
+    });
 
-    // Затем отправляем новое с клавиатурой
-    await bot.sendMessage(chatId, messageText, keyboard);
   } catch (err) {
     console.error("Ошибка регистрации:", err);
-    await bot.sendMessage(chatId, "❌ Ошибка регистрации. Попробуйте позже.");
+    await sendOrEditMessage(bot, chatId, "❌ Ошибка регистрации. Попробуйте позже.");
   }
 };
 
 export const showMainMenu = async (bot, chatId) => {
   const keyboard = {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '🛒 Сделать заявку', callback_data: 'make_order' }],
-        [{ text: '📞 Контактная информация', callback_data: 'contact_info' }],
-        [{ text: 'ℹ️ Информация о боте', callback_data: 'bot_info' }],
-        [{ text: '📝 Мои заявки', callback_data: 'my_orders' }]
-      ]
-    }
+    inline_keyboard: [
+      [{ text: '🛒 Сделать заявку', callback_data: 'make_order' }],
+      [{ text: '📞 Контактная информация', callback_data: 'contact_info' }],
+      [{ text: 'ℹ️ Информация о боте', callback_data: 'bot_info' }],
+      [{ text: '📝 Мои заявки', callback_data: 'my_orders' }]
+    ]
   };
 
-  await bot.sendMessage(chatId, "Добро пожаловать в систему заказа ингредиентов!", keyboard);
+  await sendOrEditMessage(bot, chatId, "Добро пожаловать в систему заказа продуктов!", {
+    reply_markup: keyboard
+  });
 };
 
 export const showContactInfo = async (bot, chatId) => {
@@ -109,48 +152,46 @@ export const showContactInfo = async (bot, chatId) => {
   `;
 
   const keyboard = {
-    reply_markup: {
-      inline_keyboard: [[{ text: '⬅️ Назад', callback_data: 'main_menu' }]]
-    }
+    inline_keyboard: [[{ text: '⬅️ Назад', callback_data: 'main_menu' }]]
   };
 
-  await bot.sendMessage(chatId, contacts, keyboard);
+  await sendOrEditMessage(bot, chatId, contacts, {
+    reply_markup: keyboard
+  });
 };
 
 export const showBotInfo = async (bot, chatId) => {
   const info = `
 ℹ️ Информация о боте:
-Этот бот позволяет оформлять заявки на ингредиенты.
+Этот бот позволяет оформлять заявки на продукты.
 Для оформления заявки:
 1. Нажмите "Сделать заявку"
 2. Выберите категорию
-3. Выберите ингредиент
+3. Выберите продукт
 4. Укажите количество (кратно фасовке)
-5. Нажмите "Отправить заявку"
+5.Выбрать что-то еще или "Отправить заявку"
   `;
 
   const keyboard = {
-    reply_markup: {
-      inline_keyboard: [[{ text: '⬅️ Назад', callback_data: 'main_menu' }]]
-    }
+    inline_keyboard: [[{ text: '⬅️ Назад', callback_data: 'main_menu' }]]
   };
 
-  await bot.sendMessage(chatId, info, keyboard);
+  await sendOrEditMessage(bot, chatId, info, {
+    reply_markup: keyboard
+  });
 };
+
 export const showMyOrders = async (bot, chatId) => {
   try {
-   // Сначала получаем пользователя
     const user = await db.User.findOne({ where: { telegramId: chatId.toString() } });
     if (!user) {
-      await bot.sendMessage(chatId, "❌ Пользователь не найден.");
+      await sendOrEditMessage(bot, chatId, "❌ Пользователь не найден.");
       return;
     }
 
-    // Получаем заказы (меню, созданные пользователем)
     const orders = await db.Menu.findAll({
       where: { 
         owner_id: user.id,
-        // Исправлено: Op.gt (greater than) вместо Op.get
         is_template: { [Op.gt]: 0 }
       },
       order: [['created_at', 'DESC']],
@@ -159,7 +200,7 @@ export const showMyOrders = async (bot, chatId) => {
     });
 
     if (!orders.length) {
-      await bot.sendMessage(chatId, "📦 У вас пока нет заявок.", {
+      await sendOrEditMessage(bot, chatId, "📦 У вас пока нет заявок.", {
         reply_markup: {
           inline_keyboard: [[{ text: '⬅️ Назад', callback_data: 'main_menu' }]]
         }
@@ -168,13 +209,10 @@ export const showMyOrders = async (bot, chatId) => {
     }
 
     let message = "📦 Ваши последние заявки:\n\n";
-    
-    // Формируем клавиатуру с кнопками для просмотра деталей
     const keyboard = [];
     
     orders.forEach(order => {
       message += `${order.name}\n`;
-      // Исправлена опечатка: order.od -> order.id
       keyboard.push([{
         text: `Подробнее о ${order.name}`,
         callback_data: `order_details_${order.id}`
@@ -182,73 +220,59 @@ export const showMyOrders = async (bot, chatId) => {
     });
 
     message += "\nНажмите на кнопку для просмотра деталей.";
-
     keyboard.push([{ text: '⬅️ Назад', callback_data: 'main_menu' }]);
 
-    await bot.sendMessage(chatId, message, {
-      reply_markup: {
-        inline_keyboard: keyboard
-      }
+    await sendOrEditMessage(bot, chatId, message, {
+      reply_markup: { inline_keyboard: keyboard }
     });
   } catch (err) {
     console.error("Ошибка при отображении заявок:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось загрузить заявки.");
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось загрузить заявки.");
   }
 };
 
 export const showOrderDetails = async (bot, chatId, orderId) => {
   try {
-    // ✅ Получаем заказ
     const order = await db.Menu.findOne({
       where: { id: orderId },
       raw: true
     });
 
     if (!order) {
-      return bot.sendMessage(chatId, "❌ Заказ не найден.");
+      return sendOrEditMessage(bot, chatId, "❌ Заказ не найден.");
     }
 
-    // ✅ В новой структуре is_template содержит ID связанного MenuItem
     if (!order.is_template || order.is_template <= 0) {
-      return bot.sendMessage(chatId, "📦 Заказ найден, но данные повреждены.");
+      return sendOrEditMessage(bot, chatId, "📦 Заказ найден, но данные повреждены.");
     }
 
-    // ✅ Получаем связанный MenuItem
     const menuItem = await db.MenuItem.findOne({
       where: { id: order.is_template },
       raw: true
     });
 
     if (!menuItem) {
-      return bot.sendMessage(chatId, "📦 Заказ найден, но данные повреждены (MenuItem не найден).");
+      return sendOrEditMessage(bot, chatId, "📦 Заказ найден, но данные повреждены (MenuItem не найден).");
     }
 
-    // ✅ Получаем данные из ingredientId (массив объектов { id, quantity })
     const items = Array.isArray(menuItem.ingredientId) ? menuItem.ingredientId : [];
-    
     if (items.length === 0) {
-      return bot.sendMessage(chatId, "📦 Заказ найден, но в нём нет ингредиентов.");
+      return sendOrEditMessage(bot, chatId, "📦 Заказ найден, но в нём нет продуктов.");
     }
 
-    // ✅ Получаем ID ингредиентов
     const ingredientIds = items.map(item => item.id);
-    
-    // ✅ Получаем ингредиенты
     const ingredients = await db.Ingredient.findAll({
       where: { id: ingredientIds },
       raw: true
     });
 
-    // ✅ Формируем сообщение
     let message = `📦 Детали "${order.name}":\n\n`;
-
-    // Используем данные из массива items
     for (const item of items) {
       const ingredient = ingredients.find(ing => ing.id === item.id);
       if (ingredient) {
         message += `${ingredient.name} — ${item.quantity} ${ingredient.unit}\n`;
       } else {
-        message += `Неизвестный ингредиент (ID: ${item.id}) — ${item.quantity}\n`;
+        message += `Неизвестный продукт (ID: ${item.id}) — ${item.quantity}\n`;
       }
     }
 
@@ -257,15 +281,15 @@ export const showOrderDetails = async (bot, chatId, orderId) => {
     }
 
     const keyboard = {
-      reply_markup: {
-        inline_keyboard: [[{ text: '⬅️ Назад к заявкам', callback_data: 'my_orders' }]]
-      }
+      inline_keyboard: [[{ text: '⬅️ Назад к заявкам', callback_data: 'my_orders' }]]
     };
 
-    await bot.sendMessage(chatId, message, keyboard);
+    await sendOrEditMessage(bot, chatId, message, {
+      reply_markup: keyboard
+    });
 
   } catch (err) {
     console.error("Ошибка при отображении деталей заказа:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось загрузить детали заказа.");
+    await sendOrEditMessage(bot, chatId, "❌ Не удалось загрузить детали заказа.");
   }
 };

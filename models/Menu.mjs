@@ -16,7 +16,6 @@ export default (sequelize, DataTypes) => {
     },
     is_template: {
       type: DataTypes.INTEGER,
-      defaultValue: false
     },
     owner_id: {
       type: DataTypes.INTEGER,

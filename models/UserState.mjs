@@ -8,7 +8,7 @@ export default (sequelize, DataTypes) => {
     telegramId: {
       type: DataTypes.STRING,
       unique: true,
-      field: 'telegram_id' // Явно указываем соответствие с БД
+      field: 'telegram_id' 
     },
     userId: { 
       type: DataTypes.INTEGER,
@@ -41,6 +41,10 @@ export default (sequelize, DataTypes) => {
     },
     comment: {
       type: DataTypes.STRING,
+      allowNull: true
+    },
+    lastBotMessageId: { 
+      type: DataTypes.INTEGER,
       allowNull: true
     }
   }, {

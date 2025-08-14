@@ -2,6 +2,7 @@
 import db from '../models/index.mjs';
 import { getMenuForToday } from './databaseService.mjs'; 
 import { sendDailyMenuToUser } from './menuService.mjs';
+import {sendOrEditMessage} from '../utils/botUtils.mjs'
 
 export const sendDailyMenu = async (bot) => {
   try {
@@ -34,7 +35,7 @@ export const sendDailyMenu = async (bot) => {
         }
       };
 
-      await bot.sendMessage(user.telegramId, message, keyboard);
+      await sendOrEditMessage(user.telegramId, message, keyboard);
     }
 
   } catch (error) {
@@ -62,12 +63,12 @@ export const handleSetTime = async (bot, query) => {
     // Перезапускаем рассылку
     scheduleCustomDailyMenu(bot, selectedTime);
 
-    await bot.sendMessage(chatId, `✅ Время рассылки установлено: ${selectedTime}`);
+    await sendOrEditMessage(chatId, `✅ Время рассылки установлено: ${selectedTime}`);
     await bot.answerCallbackQuery(query.id, `Время изменено на ${selectedTime}`, true);
 
   } catch (err) {
     console.error("Ошибка установки времени:", err);
-    await bot.sendMessage(chatId, "❌ Не удалось установить время рассылки.");
+    await sendOrEditMessage(chatId, "❌ Не удалось установить время рассылки.");
   }
 };
 
